@@ -3,3 +3,9 @@ venv/
 
 # App log
 app.log
+
+# MacOS
+.DS_Store
+
+# Datas
+datasets_kaggle
