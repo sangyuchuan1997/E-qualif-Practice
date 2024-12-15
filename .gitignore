@@ -9,3 +9,8 @@ app.log
 
 # Datas
 datasets_kaggle
+deep-learning/dataset/*.gz
+deep-learning/dataset/*.pkl
+
+# python
+__pycache__
