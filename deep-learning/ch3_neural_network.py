@@ -1,36 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-
-def step_function(x):
-    y = x > 0
-    return y.astype(np.int32)
-
-
-def sigmoid_function(x):
-    return 1 / (1 + np.exp(-x))
-
-
-def ReLU_function(x):
-    return np.maximum(0, x)
-
-
-def identity_function(x):
-    return x
-
-
-def softmax(a):
-    a = a - np.max(a)  # オーバーフロー対策
-    exp_a = np.exp(a)
-    sum_exp_a = np.sum(exp_a)
-    return exp_a / sum_exp_a
+from functions import *
 
 
 def plot_activate_functions():
-    x = np.arange(-5.0, 5.0, .1)
+    x = np.arange(-5.0, 5.0, 0.1)
     y1 = step_function(x)
-    y2 = sigmoid_function(x)
+    y2 = sigmoid(x)
     y3 = ReLU_function(x)
     plt.plot(x, y1)
     plt.plot(x, y2)
@@ -40,21 +17,21 @@ def plot_activate_functions():
 
 def init_network():
     network = {}
-    network['W1'] = np.array([[.1, .3, .5], [.2, .4, .6]])
-    network['b1'] = np.array([.1, .2, .3])
-    network['W2'] = np.array([[.1, .4], [.2, .5], [.3, .6]])
-    network['b2'] = np.array([.1, .2])
-    network['W3'] = np.array([[.1, .3], [.2, .4]])
-    network['b3'] = np.array([.1, .2])
+    network["W1"] = np.array([[0.1, 0.3, 0.5], [0.2, 0.4, 0.6]])
+    network["b1"] = np.array([0.1, 0.2, 0.3])
+    network["W2"] = np.array([[0.1, 0.4], [0.2, 0.5], [0.3, 0.6]])
+    network["b2"] = np.array([0.1, 0.2])
+    network["W3"] = np.array([[0.1, 0.3], [0.2, 0.4]])
+    network["b3"] = np.array([0.1, 0.2])
     return network
 
 
 def forward(network: dict, X: np.array) -> np.array:
     """
-        A Simple Neural Network. X's shape is (2,);
+    A Simple Neural Network. X's shape is (2,);
     """
-    W1, W2, W3 = network['W1'], network['W2'], network['W3']
-    b1, b2, b3 = network['b1'], network['b2'], network['b3']
+    W1, W2, W3 = network["W1"], network["W2"], network["W3"]
+    b1, b2, b3 = network["b1"], network["b2"], network["b3"]
 
     print("--- Layer 0 ---")
     print("X:", X, " Shape:", X.shape)
@@ -63,14 +40,14 @@ def forward(network: dict, X: np.array) -> np.array:
 
     a1 = np.dot(X, W1) + b1
     print("a1:", a1, "Shape:", a1.shape)
-    z1 = sigmoid_function(a1)
+    z1 = sigmoid(a1)
     print("z1:", z1, " Shape:", z1.shape)
 
     print("--- layer 2 ---")
 
     a2 = np.dot(z1, W2) + b2
     print("a2:", a2, " Shape:", a2.shape)
-    z2 = sigmoid_function(a2)
+    z2 = sigmoid(a2)
     print("z2:", z2, " Shape:", z2.shape)
 
     print("--- layer 3 ---")
@@ -85,11 +62,11 @@ def forward(network: dict, X: np.array) -> np.array:
 
 def main():
     """
-        main process
+    main process
     """
     # plot_activate_functions()
     network = init_network()
-    X = np.array([1.0, .5])
+    X = np.array([1.0, 0.5])
     Y = forward(network, X)
 
 
