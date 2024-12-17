@@ -26,7 +26,7 @@ def init_network():
     return network
 
 
-def forward(network: dict, X: np.array) -> np.array:
+def forward(network: dict, X: np.ndarray) -> np.array:
     """
     A Simple Neural Network. X's shape is (2,);
     """
