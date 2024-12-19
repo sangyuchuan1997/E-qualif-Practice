@@ -4,6 +4,7 @@ import pandas as pd
 from functions import *
 from ch4_two_layer_net import TwoLayerNet
 from dataset.mnist import load_mnist
+from optimizer import *
 
 
 def main():
@@ -25,7 +26,9 @@ def main():
     iter_per_epoch = max(train_size / batch_size, 1)
 
     print("Network Initializing...")
-    network = TwoLayerNet(input_size=784, hidden_size=50, output_size=10)
+    network = TwoLayerNet(input_size=784, hidden_size=100, output_size=10, weight_type="HE")
+    optimizer = Adam(lr=learning_rate)
+    # optimizer = SGD(lr=learning_rate)
 
     print("Initialized. Start training...")
     for i in range(iters_num):
@@ -35,12 +38,13 @@ def main():
         t_batch = t_train[batch_mask]
 
         # 勾配の計算
-        # grad = network.numerical_gradient(x_batch, t_batch)
-        grad = network.gradient(x_batch, t_batch)
+        # grads = network.numerical_gradient(x_batch, t_batch)
+        grads = network.gradient(x_batch, t_batch)
 
         # パラメータの更新
-        for key in ('W1', 'b1', 'W2', 'b2'):
-            network.params[key] -= learning_rate * grad[key]
+        # for key in ('W1', 'b1', 'W2', 'b2'):
+        #     network.params[key] -= learning_rate * grads[key]
+        optimizer.update(network.params, grads)
 
         # 学習経過の記録
         loss = network.loss(x_batch, t_batch)
@@ -52,7 +56,7 @@ def main():
             test_acc = network.accuracy(x_test, t_test)
             train_acc_list.append(train_acc)
             test_acc_list.append(test_acc)
-            print("Iter#", i, "train acc, test acc |", train_acc, ",", test_acc)
+            print("Iter#", i, "train acc, test acc, loss |", train_acc, ",", test_acc, ",", loss)
 
 
 if __name__ == "__main__":

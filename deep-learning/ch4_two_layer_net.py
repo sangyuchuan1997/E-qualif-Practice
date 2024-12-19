@@ -9,14 +9,26 @@ from layers import *
 class TwoLayerNet:
     """クラスの説明"""
 
-    def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01):
+    def __init__(self, input_size, hidden_size, output_size, weight_init_std=0.01, weight_type="gaussian"):
         self.params = {}
-        self.params['W1'] = weight_init_std * \
-            np.random.randn(input_size, hidden_size)
         self.params['b1'] = np.zeros(hidden_size)
-        self.params['W2'] = weight_init_std * \
-            np.random.randn(hidden_size, output_size)
         self.params['b2'] = np.zeros(output_size)
+
+        if weight_type == "gaussian":
+            self.params['W1'] = weight_init_std * \
+                np.random.randn(input_size, hidden_size)
+            self.params['W2'] = weight_init_std * \
+                np.random.randn(hidden_size, output_size)
+        elif weight_type == "xavier":
+            self.params['W1'] = np.random.randn(
+                input_size, hidden_size) / np.sqrt(input_size)
+            self.params['W2'] = np.random.randn(
+                hidden_size, output_size) / np.sqrt(hidden_size)
+        else: # He
+            self.params['W1'] = np.random.randn(
+                input_size, hidden_size) * np.sqrt(2.0 / input_size)
+            self.params['W2'] = np.random.randn(
+                hidden_size, output_size) * np.sqrt(2.0 / hidden_size)
 
         # Layerの生成
         self.layers = OrderedDict()
@@ -67,7 +79,7 @@ class TwoLayerNet:
     def gradient(self, x, t):
         # forward
         self.loss(x, t)
-        
+
         # backward
         dout = 1
         dout = self.lastLayer.backword(dout)
@@ -75,7 +87,7 @@ class TwoLayerNet:
         layers.reverse()
         for layer in layers:
             dout = layer.backward(dout)
-        
+
         grads = {}
         grads['W1'] = self.layers['Affine1'].dW
         grads['b1'] = self.layers['Affine1'].db
@@ -83,6 +95,7 @@ class TwoLayerNet:
         grads['b2'] = self.layers['Affine2'].db
 
         return grads
+
 
 def main():
     """
@@ -98,7 +111,7 @@ def main():
 
     grads_numerical = net.numerical_gradient(x_batch, t_batch)
     grads_backprop = net.gradient(x_batch, t_batch)
-    
+
     for key in grads_numerical.keys():
         diff = np.average(np.abs(grads_backprop[key] - grads_numerical[key]))
         print(key, ":", diff)
