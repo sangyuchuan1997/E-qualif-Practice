@@ -56,7 +56,7 @@ class SimpleConvNet:
 
         # backward
         dout = 1
-        dout = self.last_layer.backword(dout)
+        dout = self.last_layer.backward(dout)
 
         layers = list(self.layers.values())
         layers.reverse()
@@ -97,6 +97,7 @@ def main():
     (x_train, t_train), (x_test, t_test) = load_mnist(
         normalize=True, one_hot_label=True, flatten=False)
 
+    epochs = 20
     iters_num = 10000
     train_size = x_train.shape[0]
     batch_size = 100
@@ -107,6 +108,9 @@ def main():
     test_acc_list = []
     # 1エポック(epoch)あたりの繰り返し数
     iter_per_epoch = max(train_size / batch_size, 1)
+    max_iter = int(epochs * iter_per_epoch)
+    current_iter = 0
+    current_epoch = 0
 
     print("Network Initializing...")
     network = SimpleConvNet()
@@ -114,33 +118,33 @@ def main():
     # optimizer = SGD(lr=learning_rate)
 
     print("Initialized. Start training...")
-    for i in range(iters_num):
+    for i in range(max_iter):
         # ミニバッチの取得
         batch_mask = np.random.choice(train_size, batch_size)
         x_batch = x_train[batch_mask]
         t_batch = t_train[batch_mask]
 
         # 勾配の計算
-        # grads = network.numerical_gradient(x_batch, t_batch)
         grads = network.gradient(x_batch, t_batch)
 
         # パラメータの更新
-        # for key in ('W1', 'b1', 'W2', 'b2'):
-        #     network.params[key] -= learning_rate * grads[key]
         optimizer.update(network.params, grads)
 
         # 学習経過の記録
         loss = network.loss(x_batch, t_batch)
         train_loss_list.append(loss)
+        print("train loss:", loss)
 
         # 1エポックごとに認識精度を計算
-        if i % iter_per_epoch == 0 or i == iters_num - 1:
-            train_acc = network.accuracy(x_train, t_train)
-            test_acc = network.accuracy(x_test, t_test)
+        if current_iter % iter_per_epoch == 0:
+            current_epoch += 1
+            train_acc = network.accuracy(x_train[:1000], t_train[:1000])
+            test_acc = network.accuracy(x_test[:1000], t_test[:1000])
             train_acc_list.append(train_acc)
             test_acc_list.append(test_acc)
-            print("Iter#", i, "train acc, test acc, loss |",
-                  train_acc, ",", test_acc, ",", loss)
+            print("=== epoch:", current_epoch, "train acc, test acc |",
+                  train_acc, ",", test_acc)
+        current_iter += 1
 
 
 if __name__ == "__main__":

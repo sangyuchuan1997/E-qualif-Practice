@@ -80,11 +80,11 @@ class SoftmaxWithLoss:
     def forward(self, x: np.ndarray, t: np.ndarray):
         self.t = t
         self.y = softmax(x)
-        self.loss = cross_entropy_error_onehot(self.y, self.t)
+        self.loss = cross_entropy_error(self.y, self.t)
 
         return self.loss
 
-    def backword(self, dout=1):
+    def backward(self, dout=1):
         batch_size = self.t.shape[0]
         if self.t.size == self.y.size:  # 教師データがone-hot-vectorの場合
             dx = (self.y - self.t) / batch_size

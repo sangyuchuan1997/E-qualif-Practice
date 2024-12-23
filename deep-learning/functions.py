@@ -18,18 +18,13 @@ def identity_function(x):
     return x
 
 
-def softmax(a):
-    if np.all(np.isnan(a)):
-        print("全てがNanになってしまいました.")
-        return a
-    a = a - np.nanmax(a)  # オーバーフロー対策
-    exp_a = np.exp(a)
-    sum_exp_a = np.sum(exp_a)
-    return exp_a / sum_exp_a
+def softmax(x):
+    x = x - np.max(x, axis=1, keepdims=True)
+    return np.exp(x) / np.sum(np.exp(x), axis=-1, keepdims=True)
 
 
 def sum_squared_error(y, t):
-    return 0.5 ** np.sum((y - t) ** 2)
+    return 0.5 * np.sum((y - t) ** 2)
 
 
 def cross_entropy_error_simple(y, t):
@@ -53,6 +48,19 @@ def cross_entropy_error_label(y: np.ndarray, t: np.ndarray):
         y = y.reshape(1, y.size)
     batch_size = y.shape[0]
     return -np.sum(t * np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
+
+
+def cross_entropy_error(y: np.ndarray, t: np.ndarray):
+    if y.ndim == 1:
+        t = t.reshape(1, t.size)
+        y = y.reshape(1, y.size)
+
+    # 教師データがone-hot-vectorの場合、正解ラベルのインデックスに変換
+    if t.size == y.size:
+        t = t.argmax(axis=1)
+
+    batch_size = y.shape[0]
+    return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
 
 
 def gradient_descent(f, init_x, lr=0.01, step_num=100):
