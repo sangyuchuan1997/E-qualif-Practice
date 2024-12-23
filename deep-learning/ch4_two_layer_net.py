@@ -82,7 +82,7 @@ class TwoLayerNet:
 
         # backward
         dout = 1
-        dout = self.lastLayer.backword(dout)
+        dout = self.lastLayer.backward(dout)
         layers = list(self.layers.values())
         layers.reverse()
         for layer in layers:

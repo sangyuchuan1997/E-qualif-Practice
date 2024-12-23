@@ -133,7 +133,7 @@ def main():
         # 学習経過の記録
         loss = network.loss(x_batch, t_batch)
         train_loss_list.append(loss)
-        print("train loss:", loss)
+        # print("train loss:", loss)
 
         # 1エポックごとに認識精度を計算
         if current_iter % iter_per_epoch == 0:
