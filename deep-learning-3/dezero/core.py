@@ -1,4 +1,5 @@
 import numpy as np
+import heapq
 
 
 class Variable:
@@ -6,7 +7,7 @@ class Variable:
         if data is not None:
             if not isinstance(data, np.ndarray):
                 raise TypeError('{} is not supported'.format(type(data)))
-            
+
         self.data = data
         self.grad = None
         self.creator = None
@@ -19,21 +20,21 @@ class Variable:
     def backward(self):
         if self.grad is None:
             self.grad = np.ones_like(self.data)
-        
+
         # 逆伝播の呼び出す順を考慮するためにgenerationをベースにbackwardする順を制御
         funcs = []
+        heapq.heapify(funcs)
         seen_set = set()
-        
+
         def add_func(f: 'function'):
             if f not in seen_set:
-                funcs.append(f)
+                heapq.heappush(funcs, f)
                 seen_set.add(f)
-                funcs.sort(key=lambda x: x.generation)
-        
+
         add_func(self.creator)
-        
+
         while funcs:
-            f = funcs.pop()
+            f = heapq.heappop(funcs)
             gys = [output.grad for output in f.outputs]
             gxs = f.backward(*gys)
             if not isinstance(gxs, tuple):
@@ -66,6 +67,14 @@ class Function:
         self.inputs = inputs
         self.outputs = outputs
         return outputs if len(outputs) > 1 else outputs[0]
+
+    def __lt__(self, other: 'Function'):
+        if self.generation is None or other.generation is None:
+            raise ValueError("Generation info missed.")
+        return self.generation > other.generation
+
+    def __hash__(self):
+        return id(self)
 
     def forward(self, x):
         raise NotImplementedError()
