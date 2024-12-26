@@ -14,3 +14,6 @@ deep-learning-1/dataset/*.pkl
 
 # python
 __pycache__
+
+# 動作確認用
+prov.py
