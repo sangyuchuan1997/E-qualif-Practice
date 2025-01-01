@@ -71,9 +71,9 @@ class Variable:
         self.creator = func
         self.generation += 1
 
-    def backward(self, retain_grad=False):
+    def backward(self, retain_grad=False, create_graph=False):
         if self.grad is None:
-            self.grad = np.ones_like(self.data)
+            self.grad = Variable(np.ones_like(self.data))
 
         # 逆伝播の呼び出す順を考慮するためにgenerationをベースにbackwardする順を制御
         funcs = []
@@ -89,25 +89,27 @@ class Variable:
         while funcs:
             f = heapq.heappop(funcs)
             gys = [output().grad for output in f.outputs]
-            gxs = f.backward(*gys)
-            if not isinstance(gxs, tuple):
-                gxs = (gxs,)
 
-            for x, gx in zip(f.inputs, gxs):
-                if x.grad is None:
-                    x.grad = gx
-                else:
-                    # x.grad += gxは使ってはいけない．
-                    # numpy配列の+=演算時gxはx.gradと同じアドレスを持つ（モリ効率と計算速度の最適化のためin-placeを使っている故）
-                    # x.gradを更新すると同時にgxも更新されてしまう事象が起きる
-                    x.grad = x.grad + gx
+            with using_config('enable_backprop', create_graph):
+                gxs = f.backward(*gys)
+                if not isinstance(gxs, tuple):
+                    gxs = (gxs,)
 
-                if x.creator is not None:
-                    add_func(x.creator)
+                for x, gx in zip(f.inputs, gxs):
+                    if x.grad is None:
+                        x.grad = gx
+                    else:
+                        # x.grad += gxは使ってはいけない．
+                        # numpy配列の+=演算時gxはx.gradと同じアドレスを持つ（モリ効率と計算速度の最適化のためin-placeを使っている故）
+                        # x.gradを更新すると同時にgxも更新されてしまう事象が起きる
+                        x.grad = x.grad + gx
 
-            if not retain_grad:
-                for y in f.outputs:
-                    y().grad = None  # y: weakref
+                    if x.creator is not None:
+                        add_func(x.creator)
+
+                if not retain_grad:
+                    for y in f.outputs:
+                        y().grad = None  # y: weakref
 
     def cleargrad(self):
         self.grad = None
@@ -139,15 +141,15 @@ class Function:
             raise ValueError("Generation info missed.")
         return self.generation > other.generation
 
-    def forward(self, x):
+    def forward(self, x) -> Variable:
         raise NotImplementedError()
 
-    def backward(self, gy):
+    def backward(self, gy) -> Variable:
         raise NotImplementedError()
 
 
 # =============================================================================
-# Functions
+# Type Functions
 # =============================================================================
 def as_variable(obj) -> Variable:
     if isinstance(obj, Variable):
@@ -184,7 +186,7 @@ class Mul(Function):
         return y
 
     def backward(self, gy):
-        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        x0, x1 = self.inputs
         return gy * x1, gy * x0
 
 
@@ -230,7 +232,7 @@ class Div(Function):
         return y
 
     def backward(self, gy):
-        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        x0, x1 = self.inputs
         gx0 = gy / x1
         gx1 = gy * (-x0 / x1 ** 2)
         return gx0, gx1
@@ -255,7 +257,7 @@ class Pow(Function):
         return y
 
     def backward(self, gy):
-        x = self.inputs[0].data
+        x, = self.inputs
         c = self.c
         gx = c * x ** (c - 1) * gy
         return gx
