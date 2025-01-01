@@ -197,6 +197,7 @@ class MeanSquaredError(Function):
     def forward(self, x0, x1) -> Variable:
         diff = x0 - x1
         y = (diff ** 2).sum() / len(diff)
+        return y
 
     def backward(self, gy) -> Variable:
         x0, x1 = self.inputs
