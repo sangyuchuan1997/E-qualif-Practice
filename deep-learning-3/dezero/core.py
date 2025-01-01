@@ -27,14 +27,16 @@ def no_grad():
 
 
 # =============================================================================
-# Variable
+# Variable / Parameter
 # =============================================================================
+array_types = (np.ndarray)
+
 class Variable:
     __array_priority__ = 200
 
     def __init__(self, data: np.ndarray, name: str = None):
         if data is not None:
-            if not isinstance(data, np.ndarray):
+            if not isinstance(data, array_types):
                 raise TypeError('{} is not supported'.format(type(data)))
 
         self.data = data
@@ -135,6 +137,8 @@ class Variable:
     def sum(self, axis=None, keepdims=False):
         return sum(self, axis, keepdims)
 
+class Parameter(Variable):
+    pass
 
 # =============================================================================
 # Function
@@ -178,9 +182,9 @@ def as_variable(obj) -> Variable:
     return Variable(obj)
 
 
-def as_array(x) -> np.ndarray:
+def as_array(x, array_module=np) -> np.ndarray:
     if np.isscalar(x):
-        return np.array(x)
+        return array_module.array(x)
     return x
 
 
