@@ -2,6 +2,7 @@ import numpy as np
 import heapq
 import weakref
 import contextlib
+from dezero.functions import reshape, transpose
 
 
 # =============================================================================
@@ -58,6 +59,10 @@ class Variable:
     def dtype(self):
         return self.data.dtype
 
+    @property
+    def T(self):
+        return transpose(self)
+
     def __len__(self) -> int:
         return len(self.data)
 
@@ -113,6 +118,19 @@ class Variable:
 
     def cleargrad(self):
         self.grad = None
+
+    def reshape(self, *shape):
+        if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
+            shape = shape[0]
+        return reshape(self, shape)
+
+    def transpose(self, *axes):
+        if len(axes) == 0:
+            axes = None
+        elif len(axes) == 1:
+            if isinstance(axes[0], (tuple, list)) or axes[0] is None:
+                axes = axes[0]
+        return transpose(self, axes)
 
 
 # =============================================================================
