@@ -1,4 +1,5 @@
 import numpy as np
+from dezero import utils
 from dezero.core import Function, Variable, as_variable
 
 
@@ -113,3 +114,64 @@ class Transpose(Function):
 
 def transpose(x, axes=None) -> Variable:
     return Transpose(axes)(x)
+
+
+class Sum(Function):
+    def __init__(self, axis, keepdims) -> None:
+        self.axis = axis
+        self.keepdims = keepdims
+
+    def forward(self, x: Variable) -> Variable:
+        self.x_shape = x.shape
+        y = x.sum(axis=self.axis, keepdims=self.keepdims)
+        return y
+
+    def backward(self, gy) -> Variable:
+        gy = utils.reshape_sum_backward(
+            gy, self.x_shape, self.axis, self.keepdims)
+        gx = broadcast_to(gy, self.x_shape)
+        return gx
+
+
+def sum(x, axis=None, keepdims=False) -> Variable:
+    return Sum(axis, keepdims)(x)
+
+
+class BroadcastTo(Function):
+    def __init__(self, shape) -> None:
+        self.shape = shape
+
+    def forward(self, x: Variable | np.ndarray) -> Variable:
+        self.x_shape = x.shape
+        y = np.broadcast_to(x, self.shape)
+        return y
+
+    def backward(self, gy) -> Variable:
+        gx = sum_to(gy, self.x_shape)
+        return gx
+
+
+def broadcast_to(x: Variable, shape) -> Variable:
+    if x.shape == shape:
+        return as_variable(x)
+    return BroadcastTo(shape)(x)
+
+
+class SumTo(Function):
+    def __init__(self, shape) -> None:
+        self.shape = shape
+
+    def forward(self, x: Variable | np.ndarray) -> Variable:
+        self.x_shape = x.shape
+        y = utils.sum_to(x, self.shape)
+        return y
+
+    def backward(self, gy) -> Variable:
+        gx = broadcast_to(gy, self.x_shape)
+        return gx
+
+
+def sum_to(x: Variable, shape) -> Variable:
+    if x.shape == shape:
+        return as_variable(x)
+    return SumTo(shape)(x)
