@@ -77,10 +77,10 @@ def tanh(x) -> Variable:
 
 
 class Reshape(Function):
-    def __init__(self, shape) -> None:
+    def __init__(self, shape):
         self.shape = shape
 
-    def forward(self, x: Variable | np.ndarray) -> Variable:
+    def forward(self, x) -> Variable:
         self.x_shape = x.shape
         y = x.reshape(self.shape)
         return y
@@ -89,17 +89,17 @@ class Reshape(Function):
         return reshape(gy, self.x_shape)
 
 
-def reshape(x: Variable, shape):
+def reshape(x, shape) -> Variable:
     if x.shape == shape:
         return as_variable(x)
     return Reshape(shape)(x)
 
 
 class Transpose(Function):
-    def __init__(self, axes=None) -> None:
+    def __init__(self, axes=None):
         self.axes = axes
 
-    def forward(self, x: Variable | np.ndarray) -> Variable:
+    def forward(self, x) -> Variable:
         y = x.transpose(self.axes)
         return y
 
@@ -117,11 +117,11 @@ def transpose(x, axes=None) -> Variable:
 
 
 class Sum(Function):
-    def __init__(self, axis, keepdims) -> None:
+    def __init__(self, axis, keepdims):
         self.axis = axis
         self.keepdims = keepdims
 
-    def forward(self, x: Variable) -> Variable:
+    def forward(self, x) -> Variable:
         self.x_shape = x.shape
         y = x.sum(axis=self.axis, keepdims=self.keepdims)
         return y
@@ -138,10 +138,10 @@ def sum(x, axis=None, keepdims=False) -> Variable:
 
 
 class BroadcastTo(Function):
-    def __init__(self, shape) -> None:
+    def __init__(self, shape):
         self.shape = shape
 
-    def forward(self, x: Variable | np.ndarray) -> Variable:
+    def forward(self, x) -> Variable:
         self.x_shape = x.shape
         y = np.broadcast_to(x, self.shape)
         return y
@@ -158,10 +158,10 @@ def broadcast_to(x: Variable, shape) -> Variable:
 
 
 class SumTo(Function):
-    def __init__(self, shape) -> None:
+    def __init__(self, shape):
         self.shape = shape
 
-    def forward(self, x: Variable | np.ndarray) -> Variable:
+    def forward(self, x) -> Variable:
         self.x_shape = x.shape
         y = utils.sum_to(x, self.shape)
         return y
@@ -175,3 +175,37 @@ def sum_to(x: Variable, shape) -> Variable:
     if x.shape == shape:
         return as_variable(x)
     return SumTo(shape)(x)
+
+
+class MatMul(Function):
+    def forward(self, x, W) -> Variable:
+        y = x.dot(W)
+        return y
+
+    def backward(self, gy) -> Variable:
+        x, W = self.inputs
+        gx = matmul(gy, W.T)
+        gW = matmul(x.T, gy)
+        return gx, gW
+
+
+def matmul(x, W) -> Variable:
+    return MatMul()(x, W)
+
+
+class MeanSquaredError(Function):
+    def forward(self, x0, x1) -> Variable:
+        diff = x0 - x1
+        y = (diff ** 2).sum() / len(diff)
+
+    def backward(self, gy) -> Variable:
+        x0, x1 = self.inputs
+        diff = x0 - x1
+        gy = broadcast_to(gy, diff.shape)
+        gx0 = gy * diff * (2. / len(diff))
+        gx1 = -gx0
+        return gx0, gx1
+
+
+def mean_squared_error(x0, x1) -> Variable:
+    return MeanSquaredError()(x0, x1)
