@@ -31,6 +31,7 @@ def no_grad():
 # =============================================================================
 array_types = (np.ndarray)
 
+
 class Variable:
     __array_priority__ = 200
 
@@ -137,8 +138,10 @@ class Variable:
     def sum(self, axis=None, keepdims=False):
         return sum(self, axis, keepdims)
 
+
 class Parameter(Variable):
     pass
+
 
 # =============================================================================
 # Function
