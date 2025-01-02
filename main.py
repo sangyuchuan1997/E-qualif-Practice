@@ -1,22 +1,23 @@
 import logging
+import torch
+import torch.nn as nn
 
-# ログの設定
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='app.log',
-    encoding='utf-8'
-)
-logger = logging.getLogger(__name__)
+
+class CustomNN(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 64, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.fc1 = nn.Linear(64 * 14 * 14, 10)
+    
+    def forward(self, x):
+        x = self.pool(torch.relu(self.conv1(x)))
+        x = x.view(-1, 64 * 14 * 14)
+        x = self.fc1(x)
+        return x
 
 def main():
-    try:
-        logger.info('プログラムを開始します')
-        # メインの処理をここに書く
-        logger.info('プログラムを正常終了します')
-    except Exception as e:
-        logger.error(f'エラーが発生しました: {str(e)}')
-        raise
+    pass
 
 if __name__ == "__main__":
     main()
