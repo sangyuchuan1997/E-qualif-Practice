@@ -3,6 +3,9 @@ from dezero import utils
 from dezero.core import Function, Variable, as_variable
 
 
+# =============================================================================
+# Basic functions: square / sin / cos / tanh / exp / log
+# =============================================================================
 class Square(Function):
     def forward(self, x) -> Variable:
         return x ** 2
@@ -76,6 +79,9 @@ def tanh(x) -> Variable:
     return Tanh()(x)
 
 
+# =============================================================================
+# Tensor operations: reshape / transpose / get_item / expand_dims / flatten
+# =============================================================================
 class Reshape(Function):
     def __init__(self, shape):
         self.shape = shape
@@ -137,6 +143,41 @@ def sum(x, axis=None, keepdims=False) -> Variable:
     return Sum(axis, keepdims)(x)
 
 
+class GetItemGrad(Function):
+    def __init__(self, slices, in_shape):
+        self.slices = slices
+        self.in_shape = in_shape
+
+    def forward(self, gy) -> Variable:
+        gx = np.zeros(self.in_shape)
+        np.add.at(gx, self.slices, gy)
+        return gx
+
+    def backward(self, ggx) -> Variable:
+        return get_item(ggx), self.slices
+
+
+class GetItem(Function):
+    def __init__(self, slices):
+        self.slices = slices
+
+    def forward(self, x) -> Variable:
+        y = x[self.slices]
+        return y
+
+    def backward(self, gy) -> Variable:
+        x, = self.inputs
+        f = GetItemGrad(self.slices, x.shape)
+        return f(gy)
+
+
+def get_item(x, slices):
+    return GetItem(slices)(x)
+
+
+# =============================================================================
+# sum / sum_to / broadcast_to / average / matmul / linear
+# =============================================================================
 class BroadcastTo(Function):
     def __init__(self, shape):
         self.shape = shape
@@ -193,25 +234,6 @@ def matmul(x, W) -> Variable:
     return MatMul()(x, W)
 
 
-class MeanSquaredError(Function):
-    def forward(self, x0, x1) -> Variable:
-        diff = x0 - x1
-        y = (diff ** 2).sum() / len(diff)
-        return y
-
-    def backward(self, gy) -> Variable:
-        x0, x1 = self.inputs
-        diff = x0 - x1
-        gy = broadcast_to(gy, diff.shape)
-        gx0 = gy * diff * (2. / len(diff))
-        gx1 = -gx0
-        return gx0, gx1
-
-
-def mean_squared_error(x0, x1) -> Variable:
-    return MeanSquaredError()(x0, x1)
-
-
 class Linear(Function):
     def forward(self, x, W, b) -> Variable:
         y = x.dot(W)
@@ -263,3 +285,86 @@ class Sigmoid(Function):
 
 def sigmoid(x) -> Variable:
     return Sigmoid()(x)
+
+
+class ReLU(Function):
+    def forward(self, x) -> Variable:
+        y = np.maximum(x, 0.0)
+        return y
+
+    def backward(self, gy) -> Variable:
+        x, = self.inputs
+        mask = x.data > 0
+        gx = gy * mask
+        return gx
+
+
+def relu(x) -> Variable:
+    return ReLU()(x)
+
+
+class Softmax(Function):
+    def __init__(self, axis=1):
+        self.axis = axis
+
+    def forward(self, x) -> Variable:
+        y = x - np.max(axis=self.axis, keepdims=True)  # Overflow対応
+        y = np.exp(y)
+        y /= y.sum(axis=self.axis, keepdims=True)
+
+    def backward(self, gy) -> Variable:
+        y = self.outputs[0]()
+        gx = y * gy
+        sumdx = gx.sum(axis=self.axis, keepdims=True)
+        gx -= y * sumdx
+        return gx
+
+
+def softmax(x, axis=1) -> Variable:
+    return Softmax(axis=axis)(x)
+
+
+# =============================================================================
+# loss function: mean_squared_error / softmax_cross_entropy / sigmoid_cross_entropy / binary_cross_entropy
+# =============================================================================
+class MeanSquaredError(Function):
+    def forward(self, x0, x1) -> Variable:
+        diff = x0 - x1
+        y = (diff ** 2).sum() / len(diff)
+        return y
+
+    def backward(self, gy) -> Variable:
+        x0, x1 = self.inputs
+        diff = x0 - x1
+        gy = broadcast_to(gy, diff.shape)
+        gx0 = gy * diff * (2. / len(diff))
+        gx1 = -gx0
+        return gx0, gx1
+
+
+def mean_squared_error(x0, x1) -> Variable:
+    return MeanSquaredError()(x0, x1)
+
+
+class SoftmaxCrossEntropy(Function):
+    def forward(self, x, t) -> Variable:
+        N = x.shape[0]
+        log_z = utils.logsumexp(x, axis=1)
+        log_p = x - log_z
+        log_p = log_p[np.arange[N], t.ravel()]
+        y = -log_p.sum() / np.float32(N)
+        return y
+
+    def backward(self, gy) -> Variable:
+        x, t = self.inputs
+        N, CLS_NUM = x.shape
+
+        gy *= 1/N
+        y = softmax(x)
+
+        t_onehot = np.eye(CLS_NUM, dtype=t.dtype)[t.data]
+        y = (y - t_onehot) * gy
+
+
+def softmax_cross_entropy(x, t):
+    return SoftmaxCrossEntropy()(x, t)

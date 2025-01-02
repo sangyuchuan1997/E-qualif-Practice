@@ -1,8 +1,7 @@
 import numpy as np
 import os
 import subprocess
-from dezero.core import as_variable
-from dezero import Variable, Function
+from dezero import as_variable, Variable, Function
 
 
 # =============================================================================
@@ -68,11 +67,20 @@ def reshape_sum_backward(gy, x_shape, axis, keepdims):
     gy = gy.reshape(shape)  # reshape
     return gy
 
+
+def logsumexp(x: np.ndarray, axis=1) -> np.ndarray:
+    m = x.max(axis=axis, keepdims=True)
+    y = x - m
+    np.exp(y, out=y)
+    s = y.sum(axis=axis, keepdims=True)
+    np.log(s, out=s)
+    m += s
+    return m
+
+
 # =============================================================================
 # digraph creator
 # =============================================================================
-
-
 def get_dot_graph(output: Variable, verbose=True):
     txt = ''
     funcs = []
