@@ -11,6 +11,8 @@ app.log
 datasets_kaggle
 deep-learning-1/dataset/*.gz
 deep-learning-1/dataset/*.pkl
+*.csv
+*.gz
 
 # python
 __pycache__
