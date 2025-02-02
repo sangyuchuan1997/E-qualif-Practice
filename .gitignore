@@ -14,6 +14,8 @@ deep-learning-1/dataset/*.pkl
 *.csv
 *.gz
 *.pickle
+train
+val
 
 # python
 __pycache__
@@ -23,3 +25,6 @@ prov.py
 
 # モデル可視化
 models
+
+# models
+*.pth
