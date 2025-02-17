@@ -1,9 +1,10 @@
 import torch
 import torchvision
 import torch.utils.data as tud
-from models import CNN
+from models import *
 import torch.nn as nn
 import torch.optim as optim
+from tqdm import tqdm
 
 
 def load_data(batch_size=100, num_workers=2):
@@ -25,6 +26,12 @@ def init_model(model='cnn', device='mps'):
         model = CNN().to(device)
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=0.001)
+    
+    if model == 'ResNet':
+        model = ResNet50(img_channel=1, num_classes=10).to(device)
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(model.parameters(), lr=0.001)
+    
     return model, criterion, optimizer
 
 
@@ -33,7 +40,8 @@ def train(model, trainloader, testloader, criterion, optimizer, epochs=20, batch
     for epoch in range(epochs):
         # train
         model.train()
-        for (inputs, labels) in trainloader:
+        pbar = tqdm(trainloader, desc=f'Epoch {epoch+1}/{epochs} [Train]')
+        for (inputs, labels) in pbar:
             inputs, labels = inputs.to(device), labels.to(device)
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -46,8 +54,9 @@ def train(model, trainloader, testloader, criterion, optimizer, epochs=20, batch
         sum_loss = .0
         sum_correct = 0
         sum_total = 0
-
-        for (inputs, labels) in trainloader:
+        
+        pbar = tqdm(trainloader, desc='Evaluating Train Set')
+        for (inputs, labels) in pbar:
             inputs, labels = inputs.to(device), labels.to(device)
             model.eval()
             outputs = model(inputs)
@@ -63,7 +72,8 @@ def train(model, trainloader, testloader, criterion, optimizer, epochs=20, batch
         sum_loss = .0
         sum_correct = 0
         sum_total = 0
-        for (inputs, labels) in testloader:
+        pbar = tqdm(testloader, desc='Evaluating Test Set')
+        for (inputs, labels) in pbar:
             inputs, labels = inputs.to(device), labels.to(device)
             model.eval()
             outputs = model(inputs)
@@ -78,5 +88,5 @@ def train(model, trainloader, testloader, criterion, optimizer, epochs=20, batch
 
 if __name__ == '__main__':
     trainloader, testloader = load_data()
-    model, criterion, optimizer = init_model(model='cnn')
+    model, criterion, optimizer = init_model(model='ResNet')
     train(model, trainloader, testloader, criterion, optimizer)

@@ -1,8 +1,4 @@
-import torch
-import torchvision
 import torch.nn as nn
-import torch.utils.data as tud
-import torch.optim as optim
 
 
 class CNN(nn.Module):
