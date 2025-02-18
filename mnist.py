@@ -55,8 +55,7 @@ def train(model, trainloader, testloader, criterion, optimizer, epochs=20, batch
         sum_correct = 0
         sum_total = 0
         
-        pbar = tqdm(trainloader, desc='Evaluating Train Set')
-        for (inputs, labels) in pbar:
+        for (inputs, labels) in trainloader:
             inputs, labels = inputs.to(device), labels.to(device)
             model.eval()
             outputs = model(inputs)
@@ -72,8 +71,7 @@ def train(model, trainloader, testloader, criterion, optimizer, epochs=20, batch
         sum_loss = .0
         sum_correct = 0
         sum_total = 0
-        pbar = tqdm(testloader, desc='Evaluating Test Set')
-        for (inputs, labels) in pbar:
+        for (inputs, labels) in testloader:
             inputs, labels = inputs.to(device), labels.to(device)
             model.eval()
             outputs = model(inputs)
